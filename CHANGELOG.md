@@ -9,3 +9,4 @@
 - Resource limits, no-overwrite output handling, property and integration tests.
 - develop/production/release/hotfix policy, pinned CI and candidate artifacts.
 - MIT license and English documentation with zh-TW summaries.
+- Reproducible bird demo and README walk-through with PNG/SVG comparison.

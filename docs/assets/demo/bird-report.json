@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0-alpha.1",
+  "input": {
+    "width": 1254,
+    "height": 1254,
+    "channel": "alpha",
+    "inverted": false
+  },
+  "options": {
+    "threshold": 0.5,
+    "tolerance_px": 1.0,
+    "corner_angle_degrees": 60.0,
+    "merge": true,
+    "svg_precision": 3
+  },
+  "quality": {
+    "contours": 3,
+    "segments": 62,
+    "rms_error_px": 0.284255785692376,
+    "p95_error_px": 0.6244813011980423,
+    "sampled_hausdorff_px": 0.9125134421094426,
+    "hausdorff_upper_bound_px": 0.9828259521094427,
+    "flattening_error_px": 0.0078125,
+    "topology_resolution_px": 0.0078125,
+    "reference": "marching-squares level-set polylines",
+    "distribution": "uniform arc-length source-to-output samples",
+    "passed": true
+  },
+  "raster": {
+    "iou": 0.9949166356850745,
+    "pixel_disagreement": 711,
+    "reference_threshold": 0.5,
+    "rendered_alpha_threshold": 0.5019607843137255,
+    "resolution": "1254x1254"
+  },
+  "timings_ms": {
+    "decode": 5.595916,
+    "vectorize": 334.02437499999996,
+    "export_validation": 6.0498330000000005,
+    "diagnostics": 19.125666
+  }
+}

@@ -1,8 +1,15 @@
 # Architecture
 
-The workspace has two crates. `contour-fit-core` owns numerical geometry and
-`contour-fit` owns the CLI and adapters. Public core types do not expose kurbo,
-png, resvg, or serialization types.
+The pipeline starts with a silhouette and ends with checked SVG curves. It
+extracts an outline, fits curves to it, and validates them before trying to
+reduce the curve count. Export checks the rounded coordinates once more.
+
+Two crates divide the work: `contour-fit-core` handles masks and geometry;
+`contour-fit` handles command-line arguments, PNG/SVG files, and diagnostics.
+This lets a library caller use the fitter without adopting the CLI's file
+formats. Public core types do not expose kurbo, png, resvg, or serialization
+types. [Start with the runnable example](../README.md#try-it) if you want to use
+the tool before reading about its internals.
 
 ```mermaid
 flowchart LR

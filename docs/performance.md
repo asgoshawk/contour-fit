@@ -66,5 +66,8 @@ scalloped outlines, created in code without third-party artwork.
 Rust source snapshot SHA-256 (including tests and benches):
 `35ba878d7f4812d05724c0b7b48ec38be3ccdb6c148af5edb27361e50c3fdb29`.
 
-Linux and real user artwork still require validation after remote CI/input availability.
+Linux tests and release builds passed in [the initial PR's CI](https://github.com/asgoshawk/contour-fit/actions/runs/37322464650).
+The timing and memory measurements above remain macOS-only. A separate
+[user-provided bird demo](assets/demo/README.md) records one real-image conversion;
+it does not establish performance or quality across other artwork.
 Raw generated images, reports and Criterion samples live under target/ and are not committed.

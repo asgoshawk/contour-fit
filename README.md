@@ -1,48 +1,118 @@
 # contour-fit
 
-Deterministic silhouette-to-SVG fitting with error-controlled Bézier curves,
-topology preservation, and a Rust library and CLI.
+Turn a silhouette PNG into SVG curves, with a report showing how closely the
+curves follow the input outline. Use it for single-color logos, icons, and masks
+where you want to control the fitting error.
 
-**Development version: `0.1.0-alpha.1` (not published).** Supports transparent
-and black-on-white silhouette PNGs, independent components, and nested holes.
-Photos, segmentation, animation, and color vectorization are outside v0.1.
+The command-line tool runs locally. The Rust library provides the same fitting
+pipeline for masks you already have in memory.
 
-[繁體中文](docs/zh-TW/README.md) · [Architecture](docs/architecture.md) ·
-[Quality definitions](docs/quality.md) · [Releases](docs/releases.md) ·
-[Supply-chain review](docs/dependencies.md) · [Performance](docs/performance.md)
+**Current version: `0.1.0-alpha.1`.** This is an unpublished alpha; build from
+source using the instructions below. [繁體中文](docs/zh-TW/README.md)
 
-## Build and use
+## See an example
 
-Install the pinned Rust toolchain with rustup, then:
+![Bird silhouette: original PNG on the left, fitted SVG on the right, both on white backgrounds.](docs/assets/demo/bird-comparison.png)
+
+This bird is the first user-provided example converted with contour-fit. The
+SVG keeps the original 1254 × 1254 canvas and transparent background. The white
+panels above are only for display.
+
+| Measurement | Result | What it tells you |
+| --- | --- | --- |
+| SVG size | 3,292 bytes | Stores the outline as scalable paths. |
+| Curve segments | 62 | Total across all 3 extracted contours. |
+| Error upper bound | 0.983 px | Passes the requested 1 px fitting limit. |
+| Raster overlap (IoU) | 99.49% | Overlap when the SVG is rendered at the input size. |
+
+These measurements describe this image, not a guarantee for every input.
+The distance reference is the outline extracted from the PNG at the selected
+threshold. [How the checks work](docs/quality.md).
+
+[Original PNG](docs/assets/demo/bird-source.png) ·
+[Generated SVG](docs/assets/demo/bird.svg) ·
+[Full report](docs/assets/demo/bird-report.json) ·
+[Demo source and artwork permissions](docs/assets/demo/README.md)
+
+## Try it
+
+Install [Rust with rustup](https://rustup.rs/). The repository pins the toolchain
+to Rust 1.97.0. Start with the included bird so you can compare your result:
 
 ```sh
+git clone https://github.com/asgoshawk/contour-fit.git
+cd contour-fit
 cargo build --release --locked
-./target/release/contour-fit silhouette.png -o silhouette.svg \
-  --report silhouette.metrics.json --debug-dir silhouette-debug
+mkdir -p artifacts
+./target/release/contour-fit docs/assets/demo/bird-source.png \
+  -o artifacts/bird.svg \
+  --report artifacts/bird-report.json \
+  --debug-dir artifacts/bird-debug
 ```
 
-All output destinations must be new. Parent directories must already exist;
-only the optional debug directory is created. The tool never overwrites inputs.
-Runtime conversion does not access the network.
+Open `artifacts/bird.svg` to see the vector output. The JSON report contains error
+measurements and stage timings. `bird-debug/preview.png` shows the rendered SVG;
+`bird-debug/overlay.png` compares the extracted outline in red with the fitted
+curves in blue.
+
+Choose new output names when running again: existing files are never overwritten.
+Parent directories must exist; only the optional debug directory is created.
+Conversion does not use the network.
+
+### Convert your own image
+
+Run from the repository root, replacing `input.png` with your file:
 
 ```sh
-contour-fit image.png -o image.svg --channel alpha --threshold 0.5
-contour-fit white-on-black.png -o image.svg --channel luminance --invert
-contour-fit image.png -o image.svg --tolerance 0.25 --no-merge
+./target/release/contour-fit input.png -o artifacts/output.svg
 ```
 
-The default tolerance is **1 source pixel**, measured against the marching-squares
-level-set contours, not unknown pre-rasterization geometry. Alpha is selected
-when nonopaque pixels exist; otherwise auto selects dark luminance as foreground.
-Cleanup and cropping are never performed automatically.
+The default settings suit transparent silhouettes and opaque black-on-white
+images. Auto mode uses alpha if any pixel is nonopaque; otherwise it treats dark
+pixels as foreground.
 
-Output is one `currentColor` path with closed subpaths and `evenodd` fill. SVG
-coordinate rounding is revalidated before writing. Debug mode produces a PNG
-preview, an overlay (red reference, blue fitted contours), and raster IoU in the
-optional JSON report. Timings vary; SVG geometry is deterministic on the same
-platform and toolchain. [See numerical limits and metric definitions](docs/quality.md).
+| Input or goal | Additional flags |
+| --- | --- |
+| Select transparency explicitly | `--channel alpha` |
+| White silhouette on an opaque black background | `--channel luminance --invert` |
+| Allow only a quarter-pixel fitting error | `--tolerance 0.25` |
+| Inspect the fit | `--report artifacts/output-report.json --debug-dir artifacts/output-debug` |
+| Skip the optional curve-merging pass | `--no-merge` |
 
-## Library
+Smaller tolerances usually need more curves and work. `--no-merge` skips the
+attempt to reduce segment count after fitting. See all options with
+`./target/release/contour-fit --help`.
+
+## What to expect
+
+The default error limit is **1 pixel at the input image's size**. After fitting,
+an independent validator checks distance, separate components, and nested holes.
+The SVG's rounded coordinates are checked again before any output is written.
+
+The tool keeps the canvas and small details, including isolated marks. It does
+not automatically remove noise, delete holes, or crop. Output uses `currentColor`
+and closed subpaths with `evenodd` fill; an inline SVG can inherit a page's text
+color.
+
+Use silhouette PNGs. Photo segmentation, animated PNG, and color vectorization
+are outside this alpha's scope. Distance and topology checks use floating-point
+arithmetic with a finite checking resolution. They do not recover an unknown
+original vector drawing or provide a formal proof. Very noisy inputs or tight
+tolerances can hit resource limits and fail without writing an SVG.
+[Metric definitions and numerical limits](docs/quality.md).
+
+## Use the Rust library
+
+Use this unpublished alpha through a path dependency pointing to your local
+checkout. For an app in a directory next to `contour-fit`:
+
+```toml
+[dependencies]
+contour-fit-core = { path = "../contour-fit/crates/contour-fit-core" }
+```
+
+`contour-fit-core` accepts a mask whose values range from 0 (background) to 1
+(foreground). This small example has one foreground pixel in a 2 × 2 mask:
 
 ```rust
 use contour_fit_core::{FitError, FitOptions, RasterField, vectorize};
@@ -55,35 +125,34 @@ fn main() -> Result<(), FitError> {
 }
 ```
 
-The API returns closed paths, parent/depth metadata, unmodified reference contours,
-and a quality report. It performs no file I/O, PNG decoding, or SVG rendering.
-API changes before 1.0 may occur in minor releases; patch releases stay compatible.
+The result contains closed paths, contour parent/depth metadata, reference
+outlines, and a quality report. The core performs no file I/O; the CLI handles
+PNG decoding, SVG export, and diagnostic rendering. Before 1.0, minor releases
+may change the public API; patch releases remain compatible.
 
-## Development
+## Work on the project
 
-```sh
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
-python3 -m unittest discover -s scripts -p 'test_*.py'
-cargo build --workspace --release --locked
-cargo bench -p contour-fit-core --bench pipeline --locked
-cargo install cargo-deny --version 0.20.2 --locked
-cargo deny --locked check advisories licenses bans sources
-```
+Feature PRs target `develop`. Releases follow
+`feature → develop → release/X.Y.Z → production`, with alpha candidates on the
+release branch and official versions on `production`. No workflow automatically
+publishes a release.
 
-Use **feature → develop → release/X.Y.Z → production**, with alpha versions
-on the matching release branch and official versions on production. The initial
-production bootstrap is not a release. See [CONTRIBUTING](CONTRIBUTING.md) for TDD
-and [release policy](docs/releases.md) for hotfixes, approvals, and immutable tags.
-No workflow automatically publishes GitHub releases or crates.io packages.
-CI uses standard Linux and Apple Silicon runners for this public repository;
-candidate packaging is manual with 7-day artifact retention.
+[CONTRIBUTING](CONTRIBUTING.md) covers TDD, coding conventions, and local checks.
+CI checks Linux and Apple Silicon using standard runners for this public repo.
+Candidate packaging is manual; its artifacts expire after 7 days.
 [GitHub Free scope and storage limits](docs/releases.md#github-free-and-ci-scope).
+
+Read further according to what you need:
+
+- [Quality](docs/quality.md): what the report measures and where its guarantees stop.
+- [Architecture](docs/architecture.md): how extraction, fitting, and validation fit together.
+- [Dependencies](docs/dependencies.md): package choices, licenses, and supply-chain review.
+- [Performance](docs/performance.md): measured time and memory, with reproduction commands.
+- [Releases](docs/releases.md): branches, versions, and acceptance gates.
 
 ## License
 
-[MIT](LICENSE). Third-party notices are recorded in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); distribution artifacts include
-full dependency license texts. Input artwork and generated outputs do not
-inherit this project's software license.
+The software is [MIT licensed](LICENSE). Dependencies retain their own licenses;
+distribution artifacts include the texts listed in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).
+Input artwork and generated outputs do not inherit the software license.
+See the [demo notice](docs/assets/demo/README.md) for the included bird artwork.
