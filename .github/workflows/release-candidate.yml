@@ -59,7 +59,7 @@ jobs:
           python3 scripts/dependency_inventory.py --runtime-target "$RELEASE_TARGET" --output artifacts/dependencies.json --notices artifacts/DEPENDENCY_LICENSES.txt
           git rev-parse HEAD > artifacts/SOURCE_COMMIT
           python3 -c 'import hashlib,pathlib; p=pathlib.Path("artifacts/contour-fit"); print(hashlib.sha256(p.read_bytes()).hexdigest()+"  contour-fit")' > artifacts/SHA256SUMS
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: contour-fit-${{ inputs.version }}-${{ matrix.target }}
           path: artifacts/
