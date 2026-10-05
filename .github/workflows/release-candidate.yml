@@ -1,0 +1,66 @@
+name: Release candidate
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Candidate branch (release/X.Y.Z, hotfix/X.Y.Z, or production)'
+        required: true
+        default: release/0.1.0
+      version:
+        description: 'Exact Cargo version; does not create a tag or publish a release'
+        required: true
+        default: 0.1.0-alpha.1
+permissions:
+  contents: read
+concurrency:
+  group: candidate-${{ inputs.ref }}
+  cancel-in-progress: true
+jobs:
+  candidate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: aarch64-apple-darwin
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - run: rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy
+      - name: Check version and branch policy
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BRANCH: ${{ inputs.ref }}
+        run: python3 scripts/check_release.py "$RELEASE_VERSION" --branch "$RELEASE_BRANCH"
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Audit dependencies (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          cargo install cargo-deny --version 0.20.2 --locked
+          cargo deny --locked check advisories licenses bans sources
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Assemble reviewable artifacts
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TARGET: ${{ matrix.target }}
+        run: |
+          mkdir artifacts
+          cp "target/$RELEASE_TARGET/release/contour-fit" artifacts/
+          cp LICENSE THIRD_PARTY_NOTICES.md artifacts/
+          python3 scripts/dependency_inventory.py --runtime-target "$RELEASE_TARGET" --output artifacts/dependencies.json --notices artifacts/DEPENDENCY_LICENSES.txt
+          git rev-parse HEAD > artifacts/SOURCE_COMMIT
+          python3 -c 'import hashlib,pathlib; p=pathlib.Path("artifacts/contour-fit"); print(hashlib.sha256(p.read_bytes()).hexdigest()+"  contour-fit")' > artifacts/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: contour-fit-${{ inputs.version }}-${{ matrix.target }}
+          path: artifacts/
+          retention-days: 7

@@ -1,0 +1,8 @@
+{
+  "description": "Deterministic silhouette-to-SVG fitting with error-controlled Bézier curves, topology preservation, and a Rust library and CLI.",
+  "default_branch": "develop",
+  "allow_merge_commit": true,
+  "allow_squash_merge": true,
+  "allow_rebase_merge": false,
+  "allow_auto_merge": false
+}
