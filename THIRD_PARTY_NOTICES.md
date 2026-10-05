@@ -24,4 +24,6 @@ Numerical fitting follows the published Schneider method, implemented
 independently; no Graphics Gems source was copied. Marching-squares connectivity
 uses the standard algorithm with the documented four/eight-connectivity policy.
 Reference links and selection rationale are in docs/architecture.md and
-docs/dependencies.md. No upstream tracer source or user artwork is bundled.
+docs/dependencies.md. No upstream tracer source is bundled. The user-provided
+bird demo has a separate [artwork notice](docs/assets/demo/README.md); the
+software license does not cover that artwork.

@@ -1,15 +1,34 @@
 # Quality contract and numerical limits
 
-The reference is the continuous polyline extracted by marching squares at the
-selected scalar threshold. It is not a guarantee of recovering an original
-vector drawing or the true shape depicted in a photograph.
+Set `--tolerance 1.0` to allow at most one source pixel of checked fitting error.
+The tool compares its curves with the outline extracted from your PNG at the
+selected threshold. It also checks that fitting preserves separate components
+and holes. A quality failure stops export rather than relaxing your tolerance.
+
+That reference outline is a continuous polyline extracted by marching squares.
+These checks do not recover an unknown original vector drawing or the true
+shape depicted in a photograph. The sections below explain how to read the
+report and what the numerical checks can establish.
+
+## Read a report
+
+| Field | Meaning | Used to accept or reject the fit? |
+| --- | --- | --- |
+| `rms_error_px`, `p95_error_px` | Typical source-to-output error, estimated with evenly spaced outline samples. | No; diagnostics only. |
+| `sampled_hausdorff_px` | Largest sampled distance in either direction. | No; unsampled points still need an allowance. |
+| `hausdorff_upper_bound_px` | Sampled maximum plus flattening, sample-coverage, and numerical allowances. | Yes; must not exceed the requested tolerance. |
+| `topology_resolution_px` | Flattening resolution used for the topology checks. | Reports the checking scale; not a formal guarantee of features below that scale. |
+| `raster.iou` | Pixel overlap after rendering the SVG at the original size. | No; useful for visual comparison. |
+
+RMS and P95 use uniform arc-length source-to-output samples; tiny rings get at
+least eight samples. A small sampled maximum or high IoU alone does not establish
+that the geometric limit passed. Look at the upper bound and the validation
+result. [The bird demo report](assets/demo/bird-report.json) is a worked example.
 
 ## Geometric error
 
-- RMS and P95 are estimated source-to-output distances at uniform arc-length
-  samples; tiny rings get at least eight samples. They are diagnostic, not gates.
-- `sampled_hausdorff_px` is the maximum of both sampled directed distances to
-  the other polyline. It is not exact continuous Hausdorff distance.
+- `sampled_hausdorff_px` measures distances to the other polyline in both
+  directions. It is not exact continuous Hausdorff distance.
 - Cubics are subdivided until both interior control points are within epsilon of
   their endpoint segment. The convex-hull property bounds curve-to-chord error;
   continuity of projection covers chord-to-curve error as well.
