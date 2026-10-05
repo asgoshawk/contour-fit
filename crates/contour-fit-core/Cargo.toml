@@ -1,0 +1,23 @@
+[package]
+name = "contour-fit-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deterministic, error-controlled silhouette contour fitting"
+
+[dependencies]
+kurbo.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+criterion.workspace = true
+
+[lints]
+workspace = true
+
+[[bench]]
+name = "pipeline"
+harness = false
