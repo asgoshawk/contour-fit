@@ -1,0 +1,24 @@
+[package]
+name = "contour-fit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Fit silhouette PNG images to compact SVG paths with quality reports"
+
+[[bin]]
+name = "contour-fit"
+path = "src/main.rs"
+
+[dependencies]
+contour-fit-core = { path = "../contour-fit-core", version = "=0.1.0-alpha.1" }
+png.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+resvg.workspace = true
+
+[lints]
+workspace = true

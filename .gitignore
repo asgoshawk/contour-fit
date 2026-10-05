@@ -2,3 +2,4 @@
 /artifacts/
 *.profraw
 .DS_Store
+__pycache__/
