@@ -13,7 +13,7 @@ repository = "https://github.com/asgoshawk/contour-fit"
 kurbo = { version = "=0.13.1", default-features = false, features = ["std"] }
 thiserror = "=2.0.21"
 png = "=0.18.1"
-clap = { version = "=4.6.7", features = ["derive"] }
+clap = { version = "=4.6.9", features = ["derive"] }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
 resvg = { version = "=0.48.1", default-features = false }
